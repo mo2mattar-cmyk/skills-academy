@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>لوحة إدارة SKILLS</title><meta name="robots" content="noindex">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap">
+<style>
+*{box-sizing:border-box}body{margin:0;background:#150b22;color:#f4eefb;font-family:'Cairo',Tahoma,sans-serif}
+.w{max-width:900px;margin:auto;padding:16px}
+.box{background:#201132;border:1px solid #37204f;border-radius:14px;padding:16px;margin:12px 0}
+input,textarea,select{width:100%;background:#150b22;color:#f4eefb;border:1px solid #37204f;border-radius:10px;padding:10px;font:inherit;margin:4px 0 10px}
+label{font-size:14px;color:#b9a8d1}
+button{background:#8a3ffc;color:#fff;border:0;border-radius:10px;padding:9px 16px;font:inherit;font-weight:700;cursor:pointer}
+button.g{background:transparent;border:1px solid #c79bff;color:#c79bff}button.r{background:#b3261e}
+header{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:12px 16px;background:#201132;border-bottom:1px solid #37204f;flex-wrap:wrap}
+nav{display:flex;gap:8px;margin:12px 0;flex-wrap:wrap}nav button{background:#201132;border:1px solid #37204f}nav button.on{background:#8a3ffc}
+.row{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}
+.th{position:relative}.th img{width:100%;height:100px;object-fit:cover;border-radius:10px}
+.th button{position:absolute;top:4px;padding:2px 8px;font-size:13px}.th .x{inset-inline-start:4px}.th .s{inset-inline-end:4px}
+.st{display:grid;grid-template-columns:2fr 1fr;gap:8px}
+#m{position:fixed;bottom:16px;inset-inline:16px;background:#8a3ffc;border-radius:10px;padding:10px;text-align:center;display:none}
+</style></head><body>
+<div id="login" class="w"><div class="box"><h2>دخول لوحة الإدارة</h2>
+<form id="lf"><label>الإيميل</label><input id="le" type="email" required dir="ltr"><label>كلمة السر</label><input id="lp" type="password" required dir="ltr">
+<button>دخول</button> <button type="button" class="g" id="fg">نسيت كلمة السر</button></form><p id="lm"></p></div></div>
+<div id="app" hidden>
+<header><b>SKILLS Admin</b><span><span id="who"></span> <button class="g" id="out">خروج</button></span></header>
+<div class="w"><nav id="tabs"><button data-t="players" class="on">اللاعبون</button><button data-t="training">صور التدريب</button><button data-t="staff" id="stt" hidden>الحسابات</button></nav>
+<section id="t-players"><div class="row"><button id="np">+ لاعب جديد</button></div><div id="pl"></div>
+<form id="pf" class="box" hidden><h3 id="pt"></h3>
+<label>الاسم</label><input id="pn" required><label>السن</label><input id="pa" type="number" required><label>المركز</label><input id="pp" required>
+<label>المهارات (الاسم والرقم من 0 إلى 100)</label><div id="ps"></div>
+<label>روابط فيديوهات YouTube (رابط في كل سطر)</label><textarea id="pv" rows="3" dir="ltr"></textarea>
+<label>الصور (أول صورة هي الأساسية)</label><input id="pf2" type="file" accept="image/*" multiple><div class="grid" id="pg"></div><br>
+<button>حفظ</button> <button type="button" class="g" id="pc">إلغاء</button></form></section>
+<section id="t-training" hidden><div class="box"><label>أضف صور تدريب</label><input id="tf" type="file" accept="image/*" multiple></div><div class="grid" id="tg"></div></section>
+<section id="t-staff" hidden><form id="sf" class="box"><h3>إضافة عضو جديد</h3><label>الاسم</label><input id="sn" required><label>الإيميل</label><input id="se" type="email" required dir="ltr"><label>كلمة السر (6 أحرف على الأقل)</label><input id="sp" type="text" minlength="6" required dir="ltr"><button>إنشاء الحساب</button></form><div id="sl"></div></section>
+</div></div><div id="m"></div>
+<script src="firebase-config.js"></script>
+<script type="module">
+import {initializeApp,deleteApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import {getAuth,signInWithEmailAndPassword,onAuthStateChanged,signOut,sendPasswordResetEmail,createUserWithEmailAndPassword} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import {getFirestore,collection,doc,getDoc,getDocs,addDoc,setDoc,updateDoc,deleteDoc,query,orderBy,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+const C=window.FIREBASE_CONFIG,$=q=>document.querySelector(q),OWNER=(C.ownerEmail||"").toLowerCase();
+const app=initializeApp(C),auth=getAuth(app),db=getFirestore(app);
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const say=t=>{const m=$("#m");m.textContent=t;m.style.display="block";setTimeout(()=>m.style.display="none",3500)};
+const shrink=(src,max,q)=>new Promise((ok,no)=>{const im=new Image();im.onload=()=>{const k=Math.min(1,max/Math.max(im.width,im.height)),c=document.createElement("canvas");c.width=im.width*k|0;c.height=im.height*k|0;c.getContext("2d").drawImage(im,0,0,c.width,c.height);ok(c.toDataURL("image/jpeg",q))};im.onerror=no;im.src=src});
+const fromFile=f=>shrink(URL.createObjectURL(f),1000,.75);
+let cur=null;
+// ---- login
+$("#lf").onsubmit=async e=>{e.preventDefault();$("#lm").textContent="";try{await signInWithEmailAndPassword(auth,$("#le").value.trim(),$("#lp").value)}catch(x){$("#lm").textContent="الإيميل أو كلمة السر غير صحيحة"}};
+$("#fg").onclick=async()=>{const m=$("#le").value.trim();if(!m)return say("اكتب الإيميل الأول");try{await sendPasswordResetEmail(auth,m);say("اتبعت رابط تغيير كلمة السر على الإيميل")}catch(x){say("تعذّر الإرسال")}};
+$("#out").onclick=()=>signOut(auth);
+onAuthStateChanged(auth,async u=>{
+ if(!u){$("#login").hidden=false;$("#app").hidden=true;return}
+ const owner=u.email.toLowerCase()===OWNER;let ok=owner;
+ if(!ok){try{ok=(await getDoc(doc(db,"staff",u.uid))).exists()}catch(x){}}
+ if(!ok){$("#lm").textContent="الحساب ده مش مسموح له بالدخول";await signOut(auth);return}
+ $("#login").hidden=true;$("#app").hidden=false;$("#who").textContent=u.email;$("#stt").hidden=!owner;loadP();
+});
+$("#tabs").onclick=e=>{const b=e.target.closest("button");if(!b)return;document.querySelectorAll("#tabs button").forEach(x=>x.classList.toggle("on",x===b));["players","training","staff"].forEach(t=>$("#t-"+t).hidden=t!==b.dataset.t);if(b.dataset.t==="training")loadT();if(b.dataset.t==="staff")loadS()};
+// ---- players
+async function loadP(){
+ const r=await getDocs(query(collection(db,"players"),orderBy("createdAt","asc")));
+ $("#pl").innerHTML=r.docs.map(d=>{const p=d.data();return `<div class="box row"><span>${esc(p.name)} — ${esc(p.age)} سنة — ${esc(p.position)}</span><span><button class="g" data-e="${d.id}">تعديل</button> <button class="r" data-d="${d.id}">حذف</button></span></div>`}).join("")||'<p>لسه مفيش لاعبين.</p>';
+}
+function stats(v){$("#ps").innerHTML=[0,1,2,3].map(i=>`<div class="st"><input class="sl" placeholder="مثال: السرعة" value="${esc(v[i]?v[i][0]:"")}"><input class="sv" type="number" min="0" max="100" value="${v[i]?esc(v[i][1]):""}"></div>`).join("")}
+function grid(){$("#pg").innerHTML=cur.photos.map((x,i)=>`<div class="th"><img src="${x.data}" alt=""><button class="r x" data-x="${i}" type="button">✕</button>${i?`<button class="s" data-s="${i}" type="button">★</button>`:""}</div>`).join("")}
+function form(id,p,photos){cur={id,photos,gone:[]};$("#pt").textContent=id?"تعديل لاعب":"لاعب جديد";$("#pn").value=p.name||"";$("#pa").value=p.age||"";$("#pp").value=p.position||"";$("#pv").value=(p.videos||[]).join("\n");stats(p.stats||[]);grid();$("#pf").hidden=false;$("#pf").scrollIntoView()}
+$("#np").onclick=()=>form(null,{},[]);$("#pc").onclick=()=>{$("#pf").hidden=true};
+$("#pf2").onchange=async e=>{say("جاري تجهيز الصور...");for(const f of e.target.files)cur.photos.push({data:await fromFile(f)});e.target.value="";grid()};
+$("#pg").onclick=e=>{const x=e.target.dataset.x,s=e.target.dataset.s;if(x!=null){const o=cur.photos.splice(+x,1)[0];if(o.id)cur.gone.push(o.id)}if(s!=null){cur.photos.unshift(cur.photos.splice(+s,1)[0])}grid()};
+$("#pl").onclick=async e=>{
+ const ed=e.target.dataset.e,de=e.target.dataset.d;
+ if(ed){const p=(await getDoc(doc(db,"players",ed))).data();const r=await getDocs(query(collection(db,"players",ed,"photos"),orderBy("order")));form(ed,p,r.docs.map(d=>({id:d.id,data:d.data().data})))}
+ if(de&&confirm("متأكد من حذف اللاعب؟")){const r=await getDocs(collection(db,"players",de,"photos"));for(const d of r.docs)await deleteDoc(d.ref);await deleteDoc(doc(db,"players",de));loadP();say("تم الحذف")}
+};
+$("#pf").onsubmit=async e=>{e.preventDefault();say("جاري الحفظ...");
+ try{
+  const st=[...document.querySelectorAll("#ps .st")].map(r=>[r.querySelector(".sl").value.trim(),+r.querySelector(".sv").value||0]).filter(s=>s[0]);
+  const data={name:$("#pn").value.trim(),age:+$("#pa").value,position:$("#pp").value.trim(),stats:st,videos:$("#pv").value.split("\n").map(s=>s.trim()).filter(Boolean),cover:cur.photos.length?await shrink(cur.photos[0].data,450,.7):""};
+  if(cur.id)await updateDoc(doc(db,"players",cur.id),data);else{data.createdAt=serverTimestamp();cur.id=(await addDoc(collection(db,"players"),data)).id}
+  for(const id of cur.gone)await deleteDoc(doc(db,"players",cur.id,"photos",id));
+  for(let i=0;i<cur.photos.length;i++){const x=cur.photos[i];if(x.id)await updateDoc(doc(db,"players",cur.id,"photos",x.id),{order:i});else x.id=(await addDoc(collection(db,"players",cur.id,"photos"),{data:x.data,order:i})).id}
+  cur.gone=[];$("#pf").hidden=true;loadP();say("تم الحفظ ✅");
+ }catch(x){console.error(x);say("حصل خطأ في الحفظ (راجع الصلاحيات)")}
+};
+// ---- training
+async function loadT(){const r=await getDocs(query(collection(db,"training"),orderBy("createdAt","desc")));$("#tg").innerHTML=r.docs.map(d=>`<div class="th"><img src="${d.data().data}" alt=""><button class="r x" data-t="${d.id}">✕</button></div>`).join("")}
+$("#tf").onchange=async e=>{say("جاري الرفع...");try{for(const f of e.target.files)await addDoc(collection(db,"training"),{data:await fromFile(f),createdAt:serverTimestamp()});e.target.value="";loadT();say("تم ✅")}catch(x){say("حصل خطأ")}};
+$("#tg").onclick=async e=>{const t=e.target.dataset.t;if(t&&confirm("حذف الصورة؟")){await deleteDoc(doc(db,"training",t));loadT()}};
+// ---- staff (owner)
+async function loadS(){const r=await getDocs(collection(db,"staff"));$("#sl").innerHTML=r.docs.map(d=>{const s=d.data();return `<div class="box row"><span>${esc(s.name)} — <span dir="ltr">${esc(s.email)}</span></span><span><button class="g" data-r="${esc(s.email)}">إعادة تعيين الباسورد</button> <button class="r" data-d="${d.id}">سحب الصلاحية</button></span></div>`}).join("")||"<p>مفيش أعضاء لسه.</p>"}
+$("#sf").onsubmit=async e=>{e.preventDefault();say("جاري إنشاء الحساب...");
+ let sec;try{sec=initializeApp(C,"s"+Date.now());const a=getAuth(sec),c=await createUserWithEmailAndPassword(a,$("#se").value.trim(),$("#sp").value);
+  await setDoc(doc(db,"staff",c.user.uid),{name:$("#sn").value.trim(),email:$("#se").value.trim(),createdAt:serverTimestamp()});await signOut(a);$("#sf").reset();loadS();say("تم إنشاء الحساب ✅")}
+ catch(x){say(x.code==="auth/email-already-in-use"?"الإيميل ده مستخدم قبل كده":"تعذّر إنشاء الحساب")}finally{if(sec)deleteApp(sec)}};
+$("#sl").onclick=async e=>{const m=e.target.dataset.r,d=e.target.dataset.d;
+ if(m){await sendPasswordResetEmail(auth,m);say("اتبعت رابط إعادة التعيين للإيميل")}
+ if(d&&confirm("سحب صلاحية الدخول من العضو ده؟")){await deleteDoc(doc(db,"staff",d));loadS()}};
+</script></body></html>
