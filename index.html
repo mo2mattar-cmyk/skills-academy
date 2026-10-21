@@ -100,6 +100,26 @@ nav a{position:relative}
 nav a::after{content:"";position:absolute;inset-inline:0;bottom:-2px;height:2px;background:var(--accent);transform:scaleX(0);transition:transform .25s}
 nav a:hover::after{transform:scaleX(1)}
 @media (prefers-reduced-motion:reduce){*,*::before{animation:none!important;transition:none!important}.js .rv{opacity:1;transform:none}.bar i::before{width:var(--v)}}
+
+.card{cursor:pointer}.card .more{margin-top:10px;color:var(--accent);font-size:13px}
+#pm{position:fixed;inset:0;background:#000d;display:none;align-items:flex-start;justify-content:center;z-index:30;padding:16px;overflow-y:auto}
+#pm.on{display:flex}
+.pbox{background:var(--surface);border:1px solid var(--line);border-radius:20px;width:100%;max-width:760px;padding:20px;position:relative;margin:auto}
+#pclose{position:absolute;top:12px;inset-inline-start:12px;background:var(--brand);color:#fff;border:0;border-radius:20px;padding:4px 14px;font:inherit;cursor:pointer;z-index:2}
+#pbody h3{font-size:26px;margin:6px 0 0}
+.main{position:relative;margin:14px 0 8px}
+.main img,.main .ph{width:100%;height:min(60vh,420px);object-fit:contain;background:#0006;border-radius:14px}
+.nav{position:absolute;top:50%;transform:translateY(-50%);background:#000a;color:#fff;border:0;border-radius:50%;width:38px;height:38px;font-size:18px;cursor:pointer}
+.nav.n{inset-inline-start:8px}.nav.p{inset-inline-end:8px}
+.thumbs{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px}
+.thumbs img{height:62px;border-radius:8px;opacity:.55;cursor:pointer;border:2px solid transparent}
+.thumbs img.on{opacity:1;border-color:var(--accent)}
+#pbody h4{margin:18px 0 8px;color:var(--accent)}
+.vids{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
+.vid{position:relative;aspect-ratio:16/9;background:#000;border-radius:12px;overflow:hidden;cursor:pointer}
+.vid img,.vid iframe{width:100%;height:100%;border:0;object-fit:cover}
+.vid b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:42px;color:#fff;text-shadow:0 2px 10px #000}
+#pbody .bar i::before{width:var(--v)}
 @media(max-width:700px){.about{grid-template-columns:1fr}.reg form{grid-template-columns:1fr}}
 </style>
 </head>
@@ -151,7 +171,7 @@ nav a:hover::after{transform:scaleX(1)}
 <h2>سجّل في الأكاديمية</h2>
 <p class="sub" style="margin:0">املأ البيانات وهنتواصل معاك في أقرب وقت</p>
 <form id="regform">
-<input type="hidden" name="access_key" value="4829907f-40ba-4bd6-8f3a-c85c3d8f122b">
+<input type="hidden" name="access_key" value="YOUR_ACCESS_KEY_HERE">
 <input type="hidden" name="subject" value="تسجيل جديد في SKILLS Football Academy">
 <input type="checkbox" name="botcheck" style="display:none" tabindex="-1" autocomplete="off">
 <label>اسم اللاعب<input name="اسم اللاعب" required></label>
@@ -170,45 +190,59 @@ nav a:hover::after{transform:scaleX(1)}
 <p>@skills.academy</p>
 </div></div></div></section>
 
-<div id="vm"><div><button id="vclose">إغلاق ✕</button><span id="vbox"></span></div></div>
+<div id="pm"><div class="pbox"><button id="pclose">إغلاق ✕</button><div id="pbody"></div></div></div>
 <footer>© SKILLS Football Academy</footer>
-
-<script src="players.js"></script>
-<script>
-(function(){
-var P=window.PLAYERS||[],T=window.TRAINING||[];
-function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
-var play='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
-document.getElementById("players-list").innerHTML=P.map(function(p,i){
- var img=p.photo?'<img class="photo" src="'+esc(p.photo)+'" alt="'+esc(p.name)+'">':'<div class="ph photo">'+esc((p.name||"?").charAt(0))+'</div>';
- var bars=(p.stats||[]).map(function(s){return '<div class="bar">'+esc(s[0])+'<i style="--v:'+Math.max(0,Math.min(100,+s[1]||0))+'%"></i></div>'}).join("");
- var v=p.video?'<button class="video" data-i="'+i+'">'+play+'شاهد فيديو المهارات</button>':"";
- return '<div class="card">'+img+'<div class="body"><h3>'+esc(p.name)+'</h3><span class="tag">'+esc(p.age)+' سنة</span><span class="tag">'+esc(p.position)+'</span><div class="bars">'+bars+'</div>'+v+'</div></div>';
-}).join("");
-var g=document.getElementById("gallery");
-g.innerHTML=T.length?T.map(function(s){return '<img src="'+esc(s)+'" alt="" loading="lazy">'}).join(""):[1,2,3,4,5,6].map(function(n){return '<div class="ph">صورة تدريب '+n+'</div>'}).join("");
-function ytId(u){var m=String(u).match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([\w-]{11})/);return m?m[1]:null}
-var vm=document.getElementById("vm"),vb=document.getElementById("vbox");
-document.addEventListener("click",function(e){
- var b=e.target.closest(".video");
- if(b){var id=ytId(P[+b.dataset.i].video);if(id){vb.innerHTML='<iframe src="https://www.youtube-nocookie.com/embed/'+id+'?autoplay=1" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>';vm.classList.add("on")}}
+<script src="firebase-config.js"></script>
+<script type="module">
+const C=window.FIREBASE_CONFIG||{},LIVE=C.apiKey&&!/YOUR/.test(C.apiKey),$=q=>document.querySelector(q);
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const ytId=u=>{const m=String(u).match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([\w-]{11})/);return m?m[1]:null};
+const DEMO=[{name:"اسم اللاعب الأول",age:14,position:"مهاجم",stats:[["السرعة",90],["التسديد",80],["المراوغة",85]],videos:["https://youtu.be/aaaaaaaaaaa"]},{name:"اسم اللاعب الثاني",age:12,position:"وسط",stats:[["التمرير",92],["الرؤية",84],["اللياقة",75]],videos:[]},{name:"اسم اللاعب الثالث",age:15,position:"حارس",stats:[["ردود الفعل",88],["التمركز",82]],videos:[]}];
+let P=[],T=[],fs=null;
+const io="IntersectionObserver" in window?new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add("in");io.unobserve(e.target)}}),{threshold:.15}):null;
+function reveal(){document.querySelectorAll("h2,.sub,.box,.why div,.about>*,.card,.gallery>*,.reg").forEach(el=>{if(el.dataset.r)return;el.dataset.r=1;el.classList.add("rv");el.style.transitionDelay=(Array.prototype.indexOf.call(el.parentNode.children,el)%4)*90+"ms";io?io.observe(el):el.classList.add("in")})}
+function render(){
+ $("#players-list").innerHTML=P.length?P.map((p,i)=>`<div class="card" tabindex="0" role="button" data-i="${i}">${p.cover?`<img class="photo" src="${p.cover}" alt="">`:`<div class="ph photo">${esc((p.name||"?")[0])}</div>`}<div class="body"><h3>${esc(p.name)}</h3><span class="tag">${esc(p.age)} سنة</span><span class="tag">${esc(p.position)}</span><div class="more">اضغط لعرض الصور والفيديوهات ←</div></div></div>`).join(""):'<p class="sub">قريبًا: لاعبو الأكاديمية</p>';
+ $("#gallery").innerHTML=T.length?T.map(s=>`<img src="${s}" alt="" loading="lazy">`).join(""):[1,2,3,4,5,6].map(n=>`<div class="ph">صورة تدريب ${n}</div>`).join("");
+ reveal();
+}
+async function init(){
+ render();
+ if(!LIVE)return;
+ try{
+  const [{initializeApp},F]=await Promise.all([import("https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js"),import("https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js")]);
+  const db=F.getFirestore(initializeApp(C));fs={db,F};
+  const a=await F.getDocs(F.query(F.collection(db,"players"),F.orderBy("createdAt","asc")));P=a.docs.map(d=>({id:d.id,...d.data()}));
+  const b=await F.getDocs(F.query(F.collection(db,"training"),F.orderBy("createdAt","desc"),F.limit(12)));T=b.docs.map(d=>d.data().data);
+  render();
+ }catch(e){console.error(e)}
+}
+if(!LIVE)P=DEMO;
+init();
+const pm=$("#pm"),pb=$("#pbody");let ph=[],k=0;
+function show(){const m=$("#mainbox");if(!m)return;m.innerHTML=ph.length?`<img src="${ph[k]}" alt="">${ph.length>1?'<button class="nav p" data-d="-1">›</button><button class="nav n" data-d="1">‹</button>':""}`:'<div class="ph" style="height:200px">لا توجد صور بعد</div>';pb.querySelectorAll(".thumbs img").forEach((t,i)=>t.classList.toggle("on",i===k))}
+async function open(i){
+ const p=P[i];pm.classList.add("on");document.body.style.overflow="hidden";pb.innerHTML='<p class="sub">جاري التحميل...</p>';
+ ph=p.photos||[];
+ if(fs&&!p.photos){try{const r=await fs.F.getDocs(fs.F.query(fs.F.collection(fs.db,"players",p.id,"photos"),fs.F.orderBy("order")));ph=p.photos=r.docs.map(d=>d.data().data)}catch(e){console.error(e)}}
+ k=0;
+ const bars=(p.stats||[]).map(s=>`<div class="bar">${esc(s[0])}<i style="--v:${Math.max(0,Math.min(100,+s[1]||0))}%"></i></div>`).join("");
+ const vids=(p.videos||[]).map(ytId).filter(Boolean).map(id=>`<div class="vid" data-id="${id}"><img src="https://img.youtube.com/vi/${id}/hqdefault.jpg" alt=""><b>▶</b></div>`).join("");
+ pb.innerHTML=`<h3>${esc(p.name)}</h3><span class="tag">${esc(p.age)} سنة</span><span class="tag">${esc(p.position)}</span><div class="main" id="mainbox"></div>${ph.length>1?`<div class="thumbs">${ph.map((s,n)=>`<img src="${s}" data-n="${n}" alt="">`).join("")}</div>`:""}${bars?`<h4>المهارات</h4><div class="bars">${bars}</div>`:""}${vids?`<h4>فيديوهات المهارات</h4><div class="vids">${vids}</div>`:""}`;
+ show();
+}
+function close(){pm.classList.remove("on");pb.innerHTML="";document.body.style.overflow=""}
+document.addEventListener("click",e=>{
+ const c=e.target.closest(".card");if(c&&c.dataset.i!=null)return open(+c.dataset.i);
+ const n=e.target.closest(".nav");if(n){k=(k+ +n.dataset.d+ph.length)%ph.length;return show()}
+ const t=e.target.closest(".thumbs img");if(t){k=+t.dataset.n;return show()}
+ const v=e.target.closest(".vid");if(v&&!v.querySelector("iframe")){v.innerHTML=`<iframe src="https://www.youtube-nocookie.com/embed/${v.dataset.id}?autoplay=1" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>`;return}
+ if(e.target===pm||e.target.id==="pclose")close();
 });
-function close(){vm.classList.remove("on");vb.innerHTML=""}
-document.getElementById("vclose").onclick=close;
-vm.addEventListener("click",function(e){if(e.target===vm)close()});
-var f=document.getElementById("regform"),msg=document.getElementById("msg");
-f.addEventListener("submit",function(e){
- e.preventDefault();msg.textContent="جاري الإرسال...";
- fetch("https://api.web3forms.com/submit",{method:"POST",headers:{"Accept":"application/json"},body:new FormData(f)})
- .then(function(r){return r.json()}).then(function(d){
-  if(d.success){msg.textContent="تم استلام طلبك، هنتواصل معاك قريبًا ✅";f.reset()}else{msg.textContent="حصل خطأ، تواصل معنا على الواتساب."}
- }).catch(function(){msg.textContent="حصل خطأ، تواصل معنا على الواتساب."});
-});
-
-var els=document.querySelectorAll("h2,.sub,.box,.why div,.about>*,.card,.gallery>*,.reg");
-els.forEach(function(el){el.classList.add("rv");var i=Array.prototype.indexOf.call(el.parentNode.children,el);el.style.transitionDelay=(i%4)*90+"ms"});
-if("IntersectionObserver" in window){var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add("in");io.unobserve(e.target)}})},{threshold:.15});els.forEach(function(el){io.observe(el)})}else{els.forEach(function(el){el.classList.add("in")})}
-})();
+document.addEventListener("keydown",e=>{if(e.key==="Escape")close();if(e.key==="Enter"&&e.target.classList.contains("card"))open(+e.target.dataset.i)});
+const f=$("#regform"),msg=$("#msg");
+f.addEventListener("submit",e=>{e.preventDefault();msg.textContent="جاري الإرسال...";
+ fetch("https://api.web3forms.com/submit",{method:"POST",headers:{Accept:"application/json"},body:new FormData(f)}).then(r=>r.json()).then(d=>{if(d.success){msg.textContent="تم استلام طلبك، هنتواصل معاك قريبًا ✅";f.reset()}else msg.textContent="حصل خطأ، تواصل معنا على الواتساب."}).catch(()=>msg.textContent="حصل خطأ، تواصل معنا على الواتساب.")});
 </script>
 </body>
 </html>
