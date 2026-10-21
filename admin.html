@@ -83,11 +83,11 @@ $("#pf").onsubmit=async e=>{e.preventDefault();say("جاري الحفظ...");
   for(const id of cur.gone)await deleteDoc(doc(db,"players",cur.id,"photos",id));
   for(let i=0;i<cur.photos.length;i++){const x=cur.photos[i];if(x.id)await updateDoc(doc(db,"players",cur.id,"photos",x.id),{order:i});else x.id=(await addDoc(collection(db,"players",cur.id,"photos"),{data:x.data,order:i})).id}
   cur.gone=[];$("#pf").hidden=true;loadP();say("تم الحفظ ✅");
- }catch(x){console.error(x);say("حصل خطأ في الحفظ (راجع الصلاحيات)")}
+ }catch(x){console.error(x);say("خطأ: "+(x.code||x.message))}
 };
 // ---- training
 async function loadT(){const r=await getDocs(query(collection(db,"training"),orderBy("createdAt","desc")));$("#tg").innerHTML=r.docs.map(d=>`<div class="th"><img src="${d.data().data}" alt=""><button class="r x" data-t="${d.id}">✕</button></div>`).join("")}
-$("#tf").onchange=async e=>{say("جاري الرفع...");try{for(const f of e.target.files)await addDoc(collection(db,"training"),{data:await fromFile(f),createdAt:serverTimestamp()});e.target.value="";loadT();say("تم ✅")}catch(x){say("حصل خطأ")}};
+$("#tf").onchange=async e=>{say("جاري الرفع...");try{for(const f of e.target.files)await addDoc(collection(db,"training"),{data:await fromFile(f),createdAt:serverTimestamp()});e.target.value="";loadT();say("تم ✅")}catch(x){console.error(x);say("خطأ: "+(x.code||x.message))}};
 $("#tg").onclick=async e=>{const t=e.target.dataset.t;if(t&&confirm("حذف الصورة؟")){await deleteDoc(doc(db,"training",t));loadT()}};
 // ---- staff (owner)
 async function loadS(){const r=await getDocs(collection(db,"staff"));$("#sl").innerHTML=r.docs.map(d=>{const s=d.data();return `<div class="box row"><span>${esc(s.name)} — <span dir="ltr">${esc(s.email)}</span></span><span><button class="g" data-r="${esc(s.email)}">إعادة تعيين الباسورد</button> <button class="r" data-d="${d.id}">سحب الصلاحية</button></span></div>`}).join("")||"<p>مفيش أعضاء لسه.</p>"}
