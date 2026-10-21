@@ -64,7 +64,7 @@ async function loadP(){
  const r=await getDocs(query(collection(db,"players"),orderBy("createdAt","asc")));
  $("#pl").innerHTML=r.docs.map(d=>{const p=d.data();return `<div class="box row"><span>${esc(p.name)} — ${esc(p.age)} سنة — ${esc(p.position)}</span><span><button class="g" data-e="${d.id}">تعديل</button> <button class="r" data-d="${d.id}">حذف</button></span></div>`}).join("")||'<p>لسه مفيش لاعبين.</p>';
 }
-function stats(v){$("#ps").innerHTML=[0,1,2,3].map(i=>`<div class="st"><input class="sl" placeholder="مثال: السرعة" value="${esc(v[i]?v[i][0]:"")}"><input class="sv" type="number" min="0" max="100" value="${v[i]?esc(v[i][1]):""}"></div>`).join("")}
+function stats(v){v=v.map(s=>Array.isArray(s)?s:[s.l,s.v]);$("#ps").innerHTML=[0,1,2,3].map(i=>`<div class="st"><input class="sl" placeholder="مثال: السرعة" value="${esc(v[i]?v[i][0]:"")}"><input class="sv" type="number" min="0" max="100" value="${v[i]?esc(v[i][1]):""}"></div>`).join("")}
 function grid(){$("#pg").innerHTML=cur.photos.map((x,i)=>`<div class="th"><img src="${x.data}" alt=""><button class="r x" data-x="${i}" type="button">✕</button>${i?`<button class="s" data-s="${i}" type="button">★</button>`:""}</div>`).join("")}
 function form(id,p,photos){cur={id,photos,gone:[]};$("#pt").textContent=id?"تعديل لاعب":"لاعب جديد";$("#pn").value=p.name||"";$("#pa").value=p.age||"";$("#pp").value=p.position||"";$("#pv").value=(p.videos||[]).join("\n");stats(p.stats||[]);grid();$("#pf").hidden=false;$("#pf").scrollIntoView()}
 $("#np").onclick=()=>form(null,{},[]);$("#pc").onclick=()=>{$("#pf").hidden=true};
@@ -77,7 +77,7 @@ $("#pl").onclick=async e=>{
 };
 $("#pf").onsubmit=async e=>{e.preventDefault();say("جاري الحفظ...");
  try{
-  const st=[...document.querySelectorAll("#ps .st")].map(r=>[r.querySelector(".sl").value.trim(),+r.querySelector(".sv").value||0]).filter(s=>s[0]);
+  const st=[...document.querySelectorAll("#ps .st")].map(r=>({l:r.querySelector(".sl").value.trim(),v:+r.querySelector(".sv").value||0})).filter(s=>s.l);
   const data={name:$("#pn").value.trim(),age:+$("#pa").value,position:$("#pp").value.trim(),stats:st,videos:$("#pv").value.split("\n").map(s=>s.trim()).filter(Boolean),cover:cur.photos.length?await shrink(cur.photos[0].data,450,.7):""};
   if(cur.id)await updateDoc(doc(db,"players",cur.id),data);else{data.createdAt=serverTimestamp();cur.id=(await addDoc(collection(db,"players"),data)).id}
   for(const id of cur.gone)await deleteDoc(doc(db,"players",cur.id,"photos",id));

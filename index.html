@@ -226,7 +226,7 @@ async function open(i){
  ph=p.photos||[];
  if(fs&&!p.photos){try{const r=await fs.F.getDocs(fs.F.query(fs.F.collection(fs.db,"players",p.id,"photos"),fs.F.orderBy("order")));ph=p.photos=r.docs.map(d=>d.data().data)}catch(e){console.error(e)}}
  k=0;
- const bars=(p.stats||[]).map(s=>`<div class="bar">${esc(s[0])}<i style="--v:${Math.max(0,Math.min(100,+s[1]||0))}%"></i></div>`).join("");
+ const bars=(p.stats||[]).map(s=>Array.isArray(s)?s:[s.l,s.v]).map(s=>`<div class="bar">${esc(s[0])}<i style="--v:${Math.max(0,Math.min(100,+s[1]||0))}%"></i></div>`).join("");
  const vids=(p.videos||[]).map(ytId).filter(Boolean).map(id=>`<div class="vid" data-id="${id}"><img src="https://img.youtube.com/vi/${id}/hqdefault.jpg" alt=""><b>▶</b></div>`).join("");
  pb.innerHTML=`<h3>${esc(p.name)}</h3><span class="tag">${esc(p.age)} سنة</span><span class="tag">${esc(p.position)}</span><div class="main" id="mainbox"></div>${ph.length>1?`<div class="thumbs">${ph.map((s,n)=>`<img src="${s}" data-n="${n}" alt="">`).join("")}</div>`:""}${bars?`<h4>المهارات</h4><div class="bars">${bars}</div>`:""}${vids?`<h4>فيديوهات المهارات</h4><div class="vids">${vids}</div>`:""}`;
  show();
