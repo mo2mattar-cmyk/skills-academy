@@ -135,12 +135,12 @@ nav a:hover::after{transform:scaleX(1)}
 <nav><a href="#services">ماذا نقدم</a><a href="#about">عنّا</a><a href="#training">التدريبات</a><a href="#players">اللاعبون</a><a href="#join">سجّل</a></nav>
 </div></header>
 
-<div class="hero"><div class="wrap">
+<div class="hero" id="hero"><div class="wrap">
 <img src="assets/logo.png" alt="Skills Football Academy">
 <p class="en">SKILLS <span>Football Academy</span></p>
-<h1>هنا نصنع <b>النجوم</b></h1>
-<p>تدريب احترافي لمستقبل مشرق</p>
-<div class="age">الفئة العمرية: من 4 إلى 16 سنة</div><br>
+<h1 id="h-title">هنا نصنع <b>النجوم</b></h1>
+<p id="h-sub">تدريب احترافي لمستقبل مشرق</p>
+<div class="age" id="h-age">الفئة العمرية: من 4 إلى 16 سنة</div><br>
 <a class="btn" href="#join">سجّل الآن</a><a class="btn ghost" href="#players">تعرّف على لاعبينا</a>
 </div></div>
 
@@ -160,9 +160,9 @@ nav a:hover::after{transform:scaleX(1)}
 
 <section id="about" style="padding-top:0"><div class="wrap about">
 <div><h2>عن الأكاديمية</h2>
-<p>في اسيكلز اكاديمي نؤمن أن كل لاعب موهوب يستحق فرصة حقيقية. نجمع بين التدريب الاحترافي والانضباط والمتابعة المستمرة لنصنع جيلًا من النجوم.</p>
-<p>نطمح في أسيكلز أكاديمي إلى أن نكون الأكاديمية الرياضية الأولى في بناء وتطوير المواهب الناشئة على المستوى الإقليمي والدولي. نهدف إلى خلق بيئة رياضية متكاملة تدمج بين الانضباط العالي، والتدريب الذكي، والدعم النفسي والبدني، لتمكين كل لاعب من الوصول إلى أقصى طاقاته والالتحاق بأكبر الأندية المحترف.</p></div>
-<img src="assets/coach.jpg" alt="مدرب الأكاديمية">
+<div id="about-text"><p>في اسيكلز اكاديمي نؤمن أن كل لاعب موهوب يستحق فرصة حقيقية. نجمع بين التدريب الاحترافي والانضباط والمتابعة المستمرة لنصنع جيلًا من النجوم.</p>
+<p>اكتب هنا نبذة عن تاريخ الأكاديمية ورؤيتها وإنجازاتها.</p></div></div>
+<img id="coach" src="assets/coach.jpg" alt="مدرب الأكاديمية">
 </div></section>
 
 <section id="training" style="padding-top:0"><div class="wrap">
@@ -191,9 +191,9 @@ nav a:hover::after{transform:scaleX(1)}
 <div id="msg"></div>
 </form>
 <div class="contact">
-<p>📞 <a href="tel:01120879589" style="color:var(--accent)">01120879589</a> | <a href="https://wa.me/201120879589" style="color:var(--accent)">واتساب</a></p>
-<p>📍 دار السلام، ملاعب مدرسة الجيل القادم</p>
-<p>@skills.academy</p>
+<p>📞 <a id="c-phone" href="tel:01120879589" style="color:var(--accent)">01120879589</a> | <a id="c-wa" href="https://wa.me/201120879589" style="color:var(--accent)">واتساب</a></p>
+<p id="c-addr">📍 دار السلام، ملاعب مدرسة الجيل القادم</p>
+<p id="c-ig">@skills.academy</p>
 </div></div></div></section>
 
 <div id="pm"><div class="pbox"><button id="pclose">إغلاق ✕</button><div id="pbody"></div></div></div>
@@ -213,6 +213,19 @@ function render(){
  $("#gallery").innerHTML=T.length?T.map(s=>`<img src="${s}" alt="" loading="lazy">`).join(""):[1,2,3,4,5,6].map(n=>`<div class="ph">صورة تدريب ${n}</div>`).join("");
  reveal();
 }
+function applySite(s,c,h){
+ if(s){
+  if(s.heroTitle){const w=s.heroTitle.trim().split(" "),l=w.pop();$("#h-title").innerHTML=(w.length?esc(w.join(" "))+" ":"")+"<b>"+esc(l)+"</b>"}
+  if(s.heroSub)$("#h-sub").textContent=s.heroSub;
+  if(s.age)$("#h-age").textContent=s.age;
+  if(s.aboutText)$("#about-text").innerHTML=s.aboutText.split(/\n+/).filter(x=>x.trim()).map(x=>"<p>"+esc(x)+"</p>").join("");
+  if(s.phone){const d=s.phone.replace(/\D/g,""),w=d.startsWith("0")?"20"+d.slice(1):d;$("#c-phone").textContent=s.phone;$("#c-phone").href="tel:"+d;$("#c-wa").href="https://wa.me/"+w}
+  if(s.address)$("#c-addr").textContent="📍 "+s.address;
+  if(s.handle)$("#c-ig").textContent="@"+s.handle.replace("@","");
+ }
+ if(c&&c.data)$("#coach").src=c.data;
+ if(h&&h.data)$("#hero").style.background=`linear-gradient(#150b22bb,#150b22f2),url(${h.data}) center/cover`;
+}
 async function init(){
  render();
  if(!LIVE)return;
@@ -223,6 +236,7 @@ async function init(){
   const b=await F.getDocs(F.query(F.collection(db,"training"),F.orderBy("createdAt","desc"),F.limit(12)));T=b.docs.map(d=>d.data().data);
   render();
  }catch(e){console.error(e)}
+ try{const gs=async n=>{const d=await fs.F.getDoc(fs.F.doc(fs.db,"settings",n));return d.exists()?d.data():null};applySite(...await Promise.all([gs("site"),gs("coach"),gs("hero")]))}catch(e){console.error(e)}
 }
 if(!LIVE)P=DEMO;
 init();
